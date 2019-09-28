@@ -18,11 +18,11 @@ template<typename T> class allocator {
      using size_type = unsigned long;
 public:
      T* allocate(size_type n){
-         data = (T*) malloc(n *sizeof(T));   // allocate space for n objects of type T
+         data =  new T[n];   // allocate space for n objects of type T
          return data;
      }
 
-     void deallocate(T* p, size_type) { free(p);}     // deallocate n objects of type T starting at p
+     void deallocate(T* p, size_type) { delete [] p;}     // deallocate n objects of type T starting at p
      void construct(T* p, const T& v) { *p = v;}  // construct a T with the value v in p
      void destroy(T* p) { p = nullptr;}           // destroy the T in p
 };
@@ -69,8 +69,8 @@ public:
     iterator insert(iterator p, const T& val);  // insert element before p return iterator in p
     iterator erase(iterator p);                 // erase p element return next iterator
 
-    iterator begin(){return elem;}        // return first element
-    iterator end(){return &elem[sz];}     // return one after last element
+    iterator  begin()const{return &elem[0];}        // return first element
+    iterator end()const{return &elem[sz];}     // return one after last element
 
     vector& operator=(const vector&);           // copy assignment
     vector& operator=(vector&&);                // move assignment
@@ -80,12 +80,11 @@ public:
 
     size_type size()const{return sz;}                 //the current size
     size_type capacity() const { return space; }      //the current space
+    T* const back()const {return  &elem[sz-1];}       //the last element
 
     void resize(size_type newsize, T val=T());        //increase size and initialize elemnts to zero
-    void push_back(const T& val);               //add element to vector
+    void push_back(const T& val);                     //add element to vector
     void reserve(size_type newalloc);                 //add space for new elements
-
-    void out();                                 //prsize_type all elements
 };
 
 // copy constructor
@@ -158,18 +157,18 @@ typename vector<T,A>::iterator vector<T,A>::erase(iterator p)
 template<typename T, typename A>
 typename vector<T,A>::iterator vector<T,A>::insert(vector::iterator p, const T &val)
 {
+    long long index = p-begin();
+    if (size()==capacity())
+        reserve(size()==0?8:2*size());   // make sure we have space
+    // first copy last element into uninitialized space:
+    alloc.construct(elem+sz,*back());
+    ++sz;
+    iterator pp = begin()+index;      // the place to put val
+    for (auto pos = end()-1; pos!=pp; --pos)
+        *pos = *(pos-1);                // copy elements one position to the right
+    *(begin()+index) = val;             // “insert” val
+    return pp;
 
-}
-
-
-//prsize_type elements
-template<typename T, typename A>
-void vector<T,A>::out()
-{
-    for (size_type i=0;i<size();++i) {
-        std::cout << "vec[" <<i << "]" << elem[i] << '\n';
-        if(i==size()-1) std::cout << '\n';
-    }
 }
 
 
@@ -209,6 +208,14 @@ void vector<T,A>::push_back(const T& val)
     ++sz;                                   // increase the size
 }
 
+template<typename Iterator>  // requires Input_iterator<Iter>() (§19.3.3)
+void out(Iterator first, Iterator last)          // return an iterator to the element in [first,last) that has the highest value
+{
+    for (Iterator p = first; p!=last; ++p)
+        std::cout << *p << " ";
+    std::cout << "\n";
+}
+
 
 int main(/*size_type argc, char *argv[]*/)
 {
@@ -216,7 +223,7 @@ int main(/*size_type argc, char *argv[]*/)
     vector<int> v{10,20,30};
     v.push_back(40);
 
-    v.out();
+    out(v.begin(), v.end());
 
     auto i = v.begin();
     ++i; ++i;
@@ -224,9 +231,23 @@ int main(/*size_type argc, char *argv[]*/)
     std::cout << "erase :" << *i << "\n";
     v.erase(i);
 
-    v.out();
+    out(v.begin(), v.end());
     std::cout << v.size() << " :elementi\n";
 
+    i = v.begin();
+    ++i; ++i;
+    std::cout << "i:" << *i << " \n";
+    std::cout << "insert 30 before:" << *i << " \n";
+    v.insert(i, 30);
+
+    out(v.begin(), v.end());
+    std::cout << v.size() << " :elementi\n";
+
+    vector<int> v2{0};
+    i = v2.begin();
+    std::cout << "v2 insert 30 before:" << *i << " \n";
+    v2.insert(i, 30);
+    out(v2.begin(), v2.end());
 
 
 
