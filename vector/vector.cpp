@@ -5,14 +5,23 @@
 vector::vector(const vector & arg)
 // allocate elements, then initialize them by copying
     :sz{arg.sz},elem{new double[arg.sz]},space{arg.space}
-{
+{   std::cout << "copy constructor \n";
     std::copy(arg.elem,arg.elem+sz,elem);
+}
+
+// move constructor
+vector::vector(vector &&a)
+    :sz{a.sz}, elem{a.elem}, space{a.space}     // copy a’s elem space and sz
+{    std::cout << "move constructor \n";
+
+    a.space = a.sz = 0;                   // make a the empty vector
+    a.elem = nullptr;
 }
 
 // copy assignment
 vector &vector::operator=(const vector& a)
 // make this vector a copy of a
-{
+{   std::cout << "copy assignement \n";
     if (this==&a) return *this; // self-assignment, no work needed
 
          if (a.sz<=space) {     // enough space, no need for new allocation
@@ -22,7 +31,7 @@ vector &vector::operator=(const vector& a)
     }
     // no enough space, need new allocation
     double* p = new double[a.sz];       //allocate new space
-    std::copy(a.elem,a.elem+sz,p);      //copy elements
+    std::copy(a.elem, a.elem+a.sz, p);  //copy elements
     delete[] elem;                      //deallocate space
     elem = p;                           //set new elements
     space = sz = a.sz;                  //set new size and space
@@ -30,17 +39,11 @@ vector &vector::operator=(const vector& a)
 
 }
 
-// move constructor
-vector::vector(vector &&a)
-    :sz{a.sz}, elem{a.elem}, space{a.space}     // copy a’s elem space and sz
-{
-    a.space = a.sz = 0;                   // make a the empty vector
-    a.elem = nullptr;
-}
 
 //move assignement
-vector &vector::operator=(vector && a)
+vector& vector::operator=(vector && a)
 {
+    std::cout << "move assignement \n"; std::cout << a.elem[0] <<" a.elem[0] \n";
     delete[] elem;          // deallocate old space
     elem = a.elem;          // copy a’s elem space and sz
     space = a.space;
@@ -91,3 +94,23 @@ void vector::push_back(double d)
     elem[sz] = d;           // add d at end
     ++sz;                   // increase the size (sz is the number of elements)
 }
+
+vector f(){
+    vector v{100,200,300};
+    return v;
+}
+int main()
+{
+//   const vector vc{33,33,33};
+    vector v{22,33};
+//    vector v1{v};
+//    v = vector{10,20};
+//    v = vc;
+
+    v.out();
+    v = f();
+    v.push_back(99);
+    v.out();
+}
+
+
