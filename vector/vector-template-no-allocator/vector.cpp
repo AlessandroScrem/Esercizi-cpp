@@ -3,7 +3,7 @@
 #include <memory>
 using namespace std;
 
-// Vector senza allocator...
+// Vector without allocator...
 
 template<typename T, class A = allocator<T>>
 class vector{

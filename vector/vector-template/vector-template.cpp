@@ -2,7 +2,7 @@
 #include <string>
 #include <stdlib.h>
 #include <memory>
-using namespace std;
+//using namespace std;
 
 // implemented:
 // basic allocator class
@@ -15,7 +15,8 @@ using namespace std;
 // iterator begin() end()
 // erase()
 // insert()
-/*
+/**/
+
 template<typename T> class allocator {
      using size_type = unsigned long;
 public:
@@ -25,8 +26,6 @@ public:
      void construct(T* p, const T& v) { *p = v;}  // construct a T with the value v in p
      void destroy(T* p) { p->~T();}           // destroy the T in p
 };
-
-*/
 
 template<typename T, typename A = allocator<T>>
 class vector{
@@ -61,7 +60,6 @@ public:
     }
 
     ~vector() {alloc.deallocate(elem,space);}   //free memory
-//    ~vector() {delete [] elem;}                 //free memory
 
     vector(const vector&);                      // copy constructor: define copy
     vector(vector&& a);                         // move constructor
@@ -104,7 +102,7 @@ vector<T,A>::vector(vector&& a)
 {
     a.space = a.sz = 0;
     a.elem = nullptr;                   // make a the empty vector
-    //alloc.destroy(a.elem); not work
+    //alloc.destroy(a.elem); //alloc.destroy do not set a.elem to nullptr
 }
 
 // copy assignment
@@ -138,7 +136,7 @@ vector<T,A>& vector<T,A>::operator=(vector && a)
     space = a.space;
     sz = a.sz;
     a.elem = nullptr;       // make a the empty vector
-    //alloc.destroy(a.elem);  // not work
+    //alloc.destroy(a.elem); // alloc.destroy do not set a.elem to nullptr
     a.space = a.sz = 0;
     return *this;           // return a self-reference
 }
@@ -254,11 +252,15 @@ int main()
     v.push_back(Nomi{"minnie"});
     v.push_back(Nomi{"paperino"});
 
+    auto i = v.begin();
+    ++i; ++i;
+    v.insert(i, Nomi{"topolino"});
 
 //    debug(v);
 
     out(v.begin(), v.end());
-    std::cout << " begin end  \n";
+
+    v.erase(--i);
 
     vector<Nomi> v2{v};
 
