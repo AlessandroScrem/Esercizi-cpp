@@ -1,76 +1,87 @@
-#include <iostream>
-#include <fstream>
-#include <array>
+/******************************************************************************
+
+Chapter 20: 
+6. Write a find-and-replace operation for Documents based on §20.6.2.
+
+*******************************************************************************/
+#include <stdio.h>
+#include <string>
 #include <vector>
 #include <list>
-#include <string>
+#include <iostream>
+#include <fstream>
+
 
 using namespace std;
 
-struct Range_error : out_of_range {	// enhanced vector range error reporting
+struct Range_error : out_of_range {	
+// enhanced vector range error reporting
     int index;
     Range_error(int i) :out_of_range("Range error: "+to_string(i)), index(i) { }
 };
 
-double* get_from_jack(int& count)
-// Jack puts doubles into an array                                                                       // returns the number of elements in *count
+using Line = vector<char>;
+// a line is a vector of characters
+
+class Text_iterator {
+// keep track of line and character position within a line
+    list<Line>::iterator ln;
+    Line::iterator pos;
+public:
+    // start the iterator at line ll’s character position pp:
+    Text_iterator(list<Line>::iterator ll, Line::iterator pp)
+            :ln{ll}, pos{pp} { }
+    char& operator*() { return *pos; }
+    Text_iterator& operator++();
+    bool operator==(const Text_iterator& other) const
+            { return ln==other.ln && pos==other.pos; }
+    bool operator!=(const Text_iterator& other) const
+            { return !(*this==other); }
+};
+
+Text_iterator& Text_iterator::operator++()
 {
-    string fname = "double1.txt";
-    vector<double> vec;
-    double val = 0;
-
-    ifstream ifs(fname.c_str());
-    if(!ifs)
-        std::cerr << "can't open " << fname;
-
-    while (ifs >> val){
-        vec.push_back(val);
-     }
-    count = vec.size();
-    double* result = new double[count];
-    double* pt = result;
-    for(auto i : vec)
-        *pt++ = i;
-    return result;
-
-}
-
-vector<double>* get_from_jill();
-// Jill puts doubles into a vector
-{
-    string fname = "double2.txt";
-    vector<double> vec;
-    double val = 0;
-
-    ifstream ifs(fname.c_str());
-    if(!ifs)
-        std::cerr << "can't open " << fname;
-
-
-}
-
-
-template <typename Iter>
-Iter high(const Iter b, const Iter e)
-// return a Iterator to the element in [first,last) that has the highest value
-{
-
-    double h = numeric_limits<double>::min();
-    Iter high = nullptr;
-    for (Iter i = b; i!= e; ++i) {
-        if(h<*i) { high = i; h = *i; }
+    ++pos;                      // proceed to next character
+    if (pos==(*ln).end()) {
+        ++ln;                   // proceed to next line
+        pos = (*ln).begin();    // bad if ln==line.end(); so make sure it isn’t
     }
-    return high;
+    return *this;
 }
 
-template <typename Iter>
-void out(const Iter b, const Iter e, string s)
+struct Document {
+
+    list<Line> line; // a document is a list of lines
+    Document() { line.push_back(Line{}); }
+
+    Text_iterator begin()               // first character of first line
+    { return Text_iterator(line.begin(), (*line.begin()).begin()); }
+
+    Text_iterator end()                 // one beyond the last character of the last line
+    {
+        auto last = line.end();
+        --last;          // we know that the document is not empty
+        return Text_iterator(last, (*last).end());
+   }
+};
+
+istream& operator>>(istream& is, Document& d)
 {
-    std::cout  << s << " {";
-    for (Iter i = b; i!= e; ++i) {
-        std::cout << *i << " ";
+    for (char ch; is.get(ch); )
+    {
+        d.line.back().push_back(ch);      // add the character
+        if (ch=='\n')
+            d.line.push_back(Line{});     // add another line
     }
-    std::cout  << "}\n";
+    if (d.line.back().size())
+        d.line.push_back(Line{});        // add final empty line
+    return is;
+}
+
+
+void print( Document& d)
+{
+    for (auto p : d) cout << p;
 }
 
 
@@ -78,18 +89,23 @@ int main()
 {
 try {
 
-    int jack_count{0};
-    double *jack_data = get_from_jack(jack_count);
-    vector<double>* jill_data = get_from_jill();
+    Document doc;
 
-    out(jack_data, jack_data+jack_count, "jackdata");
+    const string fname{"textfile.txt"};
+    fstream ifs{fname};
 
-    double* jack_high = high(jack_data,jack_data+jack_count);
-    std::cout  << *jack_high <<  " is the higher value\n";
+    if(!ifs)
+        cerr << "can't open input file " << fname <<endl;
 
-    //vector<double>& v = *jill_data;
-    //double* jill_high = high(&v[0],&v[0]+v.size());
+    while(ifs >> doc);
+    print(doc);
 
+
+
+
+
+
+   
     }
     catch (Range_error& re) {
         cerr << "bad index: " << re.index << "\n";
@@ -100,4 +116,6 @@ try {
     catch (...) {
         cerr << "exception\n";
     }
+
+
 }

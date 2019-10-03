@@ -2,6 +2,7 @@
 #include <string>
 #include <stdlib.h>
 #include <memory>
+#include <stdexcept>
 //using namespace std;
 
 // implemented:
@@ -9,6 +10,7 @@
 // copy constructor, move constructor
 // copy assignment, move assignment
 // operator[]
+// at()
 // reserve resize
 // push_back()
 // size() capacity()
@@ -72,6 +74,9 @@ public:
 
     vector& operator=(const vector&);           // copy assignment
     vector& operator=(vector&&);                // move assignment
+
+    T& at(int n);             // checked access
+    const T& at(int n) const; // checked access
 
     T& operator[](size_type n) { return elem[n]; }            // for non-const vectors
     const T& operator[](size_type n) const {return elem[n];}  // for const vectors
@@ -209,6 +214,13 @@ void vector<T,A>::push_back(const T& val)
     ++sz;                                   // increase the size
 }
 
+template<typename T, typename A >
+T& vector<T,A>::at(int n)
+{
+    if (n<0 || sz<=n) throw std::out_of_range("at");
+    return elem[n];
+}
+
 template<typename Iterator>  // requires Input_iterator<Iter>() (§19.3.3)
 void out (Iterator first, Iterator last)          // return an iterator to the element in [first,last) that has the highest value
 {
@@ -244,6 +256,20 @@ void debug (C& c)
     std::cout << "\n";
 }
 
+template<typename T>
+void print_some(vector<T>& v)
+{
+   int i = -1;
+   std::cout << "Enter vector index : ";
+   while(std::cin>>i && i!=-1)
+   try {
+       std::cout << "v[" << i << "]==" << v.at(i) << "\n";
+   }
+   catch(std::out_of_range) {
+      std::cout << "bad index: " << i << "\n";
+   }
+}
+
 
 int main()
 {
@@ -254,18 +280,21 @@ int main()
 
     auto i = v.begin();
     ++i; ++i;
+    // test copy insert
     v.insert(i, Nomi{"topolino"});
-
-//    debug(v);
 
     out(v.begin(), v.end());
 
+    // test copy erase
     v.erase(--i);
 
+    // test copy constructor
     vector<Nomi> v2{v};
 
-//   debug(v2);
    out(v2.begin(), v2.end());
+
+   // test at()
+   print_some(v);
 
    std::cout << "fine \n";
 
