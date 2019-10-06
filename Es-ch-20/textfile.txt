@@ -1,5 +1,6 @@
-Both vector and list have a member function back() that returns a reference to the last element. 
-To use it, you have to be sure that there really is a last element for back() to refer to — don’t use it on an empty container. 
-That’s why we defined a Document to end with an empty Line. 
-Note that we store every character from input, even the newline characters ('\n'). 
-Storing those newline characters greatly simplifies output, but you have to be careful how you define a character count (just counting characters will give a number that includes space and newline characters). 
+Both vector and list have a member function back() that returns a reference to the last element.
+To use it, you have to be sure that there really is a last element for back() to refer to - don’t use it on an empty container.
+That’s why we defined a Document to end with an empty 2 Line.
+Note that we store every character from input, even the newline characters ('\n').
+Storing those newline characters greatly simplifies output, but you have to be careful how you define a character count (just
+countingcharacters will give a number that includes space and newline characters).
