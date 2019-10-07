@@ -5,6 +5,8 @@
 #include <stdexcept>
 //using namespace std;
 
+// Implementation of std lib vector<T>
+//
 // implemented:
 // basic allocator class
 // copy constructor, move constructor

@@ -1,10 +1,8 @@
 /******************************************************************************
 
 Chapter 20: 
-13. We don’t really need a “real” one-past-the-end Link for a list.
-    Modify your solution to the previous exercise to use 0 to represent a pointer
-    to the (nonexistent) one-past-the-end Link (list<Elem>::end());
-    that way, the size of an empty list can be equal to the size of a single pointer
+12. Complete the definition of list from §20.4.1–2 and get the high() example to run.
+    Allocate a Link to represent one past the end.
 
 *******************************************************************************/
 #include <stdio.h>
@@ -13,8 +11,8 @@ Chapter 20:
 
 template<typename Elem>
 struct Link {
-    Link(const Elem& v = Elem{0} ,  Link* p = nullptr,   Link* s = nullptr)
-        : val{v}, prev{p}, succ{s}{}
+    Link() {prev = succ = this;}   // on empty Link prev e succ point to this
+    Link(const Elem& v ,  Link* p ,   Link* s ) : val{v}, prev{p}, succ{s}{}
 
     Link* prev;               // previous link
     Link* succ;               // successor (next) link
@@ -24,29 +22,32 @@ struct Link {
 template<typename Elem>
 class list {
 
-    Link<Elem>* node;    // the first link
+    Link<Elem>* node;    // one beyond the last link
+    int length;          // the length of the list
 
 public:
-    list() : node{nullptr}{ }      // create one beyond the last link
+    list() : node{new Link<Elem>}, length{0}{ }      // create one beyond the last link
     ~list();                // destroy all the  links
 
     class iterator;         // member type: iterator
 
-    iterator begin() {return  iterator(node) ;}         // iterator to first element
-    iterator end()  {return iterator(nullptr) ;}        // iterator to one beyond last element
+    iterator begin() {return  iterator(node->succ) ;}        // iterator to first element
+    iterator end()  {return iterator(node) ;}           // iterator to one beyond last element
 
     iterator insert(iterator p, const Elem& v);         // insert v into list before p
     iterator erase(iterator p);                         // remove p from the list
 
-    void push_back(const Elem& v);//  {insert(end(), v);}  // insert v at end
-    void push_front(const Elem& v);// {insert(begin(), v);}  // insert v at front
+    void push_back(const Elem& v)  {insert(end(), v);}  // insert v at end
+    void push_front(const Elem& v) {insert(begin(), v);}  // insert v at front
 
     void pop_front();           // remove the first element
     void pop_back();            // remove the last element
 
-    Elem&front();               // the first element
-    Elem& back();               // the last element
+    //Elem& front();              // the first element
+    //Elem& back();               // the last element
 
+    int size(){return length;}    // get the list size
+    // . . .
 };
 
 template<typename Elem>         // requires Element<Elem>()
@@ -64,63 +65,44 @@ public:
     bool operator==(const iterator& b) const { return curr==b.curr; }
     bool operator!= (const iterator& b) const { return curr!=b.curr; }
 
+    Link<Elem>* getLink(){return curr;}
 };
 
 template<typename Elem>
 list<Elem>::~list()
  // destroy all the  links
 {
-    while (node != nullptr) {
-        auto p = node->succ;
-        delete node;
-        node = p;
+    for(auto p = begin();length>0;){
+        p = erase(p);
     }
+    delete node; // delete the one before end link
 }
 
 
 template<typename Elem>
-typename list<Elem>::iterator list<Elem>::insert(iterator it, const Elem& val)  //non funziona
-// insert v into list after it
+typename list<Elem>::iterator list<Elem>::insert(iterator p, const Elem& v)  //non funziona
+// insert v into list after p
 {
-    if(it.curr == nullptr) { push_back(val); return end();}    // insert at end
+    Link<Elem> *nl = new Link<Elem>(v, p.curr->prev, p.curr);   // create newlink(value,prev,succ)
 
-    Link<Elem> *nl = new Link<Elem>(val, it.curr->prev, it.curr);   // create newlink(value,prev,succ)
+    p.curr->prev->succ = nl;    // newlink become the successor of previous link
+    p.curr->prev = nl;          // newlink become the previous of current link
 
-    if(nl->prev) nl->prev->succ = nl;    // newlink become the successor of previous link
-    if(nl->succ) nl->succ->prev = nl;    // newlink become the previous of current link
+    ++length;                     // increment the list size
 
-    return iterator(nl);                 // return the iterator at the newly inserted element
+    return --p;                 // return the iterator after p
 }
 
 template<typename Elem>
-typename list<Elem>::iterator list<Elem>::erase(iterator it)
-// remove it from the list
+typename list<Elem>::iterator list<Elem>::erase(iterator p)
+// remove p from the list
 {
-    if(it.curr == nullptr) return iterator(it);     // nothing to do
-    iterator ret = iterator(it.prev);               // move iterator to next link
-
-    if(it.curr->prev) it.curr->prev->succ =  it.curr->succ;         // the successor become the successor of previous link
-    if(it.curr->succ) it.curr->succ->prev =  it.curr->prev;         // the previous become the previous of the successor link
-    delete it.curr;  // free
-
-    return ret;     // return iterator at the next link
-}
-
-template<typename Elem>
-void list<Elem>::push_front(const Elem& v)
-{
-    node = new Link<Elem>{v, nullptr, node};
-    if (node->succ != nullptr) node->succ->prev = node;
-}
-
-template<typename Elem>
-void list<Elem>::push_back(const Elem& v)
-{
-    if(!node) {push_front(v); return;} // first link
-
-    auto it = begin();
-    while(it.curr->succ != nullptr) ++it;
-    it.curr->succ = new Link<Elem>{v, it.curr};
+    auto next = p.curr->succ;  // move iterator to next link
+    p.curr->prev->succ =  p.curr->succ;    // the successor become the successor of previous link
+    p.curr->succ->prev =  p.curr->prev;    // the previous become the previous of the successor link
+    delete p.curr;  // free
+    --length;
+    return next;     // return iterator at the next link
 }
 
 template<typename Iterator>  // requires Input_iterator<Iter>() (ยง19.3.3)
@@ -154,7 +136,6 @@ try {
     lst.push_back(2);
     lst.push_back(3);
     lst.push_back(4);
-    lst.insert(lst.end(), 5);
 
     list<int>::iterator i = lst.begin();
 
