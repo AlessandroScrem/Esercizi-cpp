@@ -1,145 +1,271 @@
 /******************************************************************************
 
 Chapter 20: 
-13. We don’t really need a “real” one-past-the-end Link for a list.
-    Modify your solution to the previous exercise to use 0 to represent a pointer
-    to the (nonexistent) one-past-the-end Link (list<Elem>::end());
-    that way, the size of an empty list can be equal to the size of a single pointer
+15. Define a pvector to be like a vector of pointers except that it contains
+    pointers to objects and its destructor deletes each object.
 
 *******************************************************************************/
-#include <stdio.h>
-#include <string>
 #include <iostream>
+#include <string>
+#include <stdlib.h>
+#include <memory>
+#include <stdexcept>
+//using namespace std;
 
-template<typename Elem>
-struct Link {
-    Link(const Elem& v = Elem{0} ,  Link* p = nullptr,   Link* s = nullptr)
-        : val{v}, prev{p}, succ{s}{}
+// Implementation of std lib vector<T>
+//
+// implemented:
+// basic allocator class
+// copy constructor, move constructor
+// copy assignment, move assignment
+// operator[]
+// at()
+// reserve resize
+// push_back()
+// size() capacity()
+// iterator begin() end()
+// erase()
+// insert()
+/**/
 
-    Link* prev;               // previous link
-    Link* succ;               // successor (next) link
-    Elem val;                 // the value
-};
-
-template<typename Elem>
-class list {
-
-    Link<Elem>* node;    // the first link
-
+template<typename T> class allocator {
+     using size_type = unsigned long;
 public:
-    list() : node{nullptr}{ }      // create one beyond the last link
-    ~list();                // destroy all the  links
+     T* allocate(size_type n){ return new T[n];}   // allocate space for n objects of type T
 
-    class iterator;         // member type: iterator
-
-    iterator begin() {return  iterator(node) ;}         // iterator to first element
-    iterator end()  {return iterator(nullptr) ;}        // iterator to one beyond last element
-
-    iterator insert(iterator p, const Elem& v);         // insert v into list before p
-    iterator erase(iterator p);                         // remove p from the list
-
-    void push_back(const Elem& v);//  {insert(end(), v);}  // insert v at end
-    void push_front(const Elem& v);// {insert(begin(), v);}  // insert v at front
-
-    void pop_front();           // remove the first element
-    void pop_back();            // remove the last element
-
-    Elem&front();               // the first element
-    Elem& back();               // the last element
-
+     void deallocate(T* p, size_type) { delete[] p;}     // deallocate n objects of type T starting at p
+     void construct(T* p, const T& v) { *p = v;}  // construct a T with the value v in p
+     void destroy(T* p) { p->~T();}           // destroy the T in p
 };
 
-template<typename Elem>         // requires Element<Elem>()
-class list<Elem>::iterator {
-    Link<Elem>* curr;              // current link
+template<typename T, typename A = allocator<T>>
+class vector{
+    /*
+     * invariant:
+     * if 0<=n<sz, elem[n] is element n
+     * sz<=space;
+     * if sz<space there is space for (space–sz) typeT after elem[sz–1]
+    */
 public:
-    friend class list;
-    iterator(Link<Elem>* p) :curr{p} {}
+    using iterator = T*;      // T* is the simplest possible iterator
+    using size_type = unsigned long;
+    using value_type = T;
 
-    iterator& operator++() {curr = curr->succ; return *this; }   // forward
-    iterator& operator--() { curr = curr->prev; return *this;}   // backward
-
-    Elem& operator*() { return curr->val; }   // get value (dereference)
-
-    bool operator==(const iterator& b) const { return curr==b.curr; }
-    bool operator!= (const iterator& b) const { return curr!=b.curr; }
-
-};
-
-template<typename Elem>
-list<Elem>::~list()
- // destroy all the  links
-{
-    while (node != nullptr) {
-        auto p = node->succ;
-        delete node;
-        node = p;
+    vector() : sz{0}, elem{nullptr}, space{0}{}
+    explicit vector(size_type s) : sz{s}, elem{alloc.allocate(s)}, space{s}
+    {
+        for (size_type i=0;i<s;++i)elem[i]=0;      //initialize
     }
-}
 
+    vector(std::initializer_list<T>lst)         // initializer-list constructor
+        :sz{static_cast<size_type>(lst.size())}       // uninitialized memory
+        ,elem{alloc.allocate(sz)}               // for elements
+        ,space{sz}
+    {
+        std::copy( lst.begin(),lst.end(),elem);    // initialize (using std::copy();
+    }
 
-template<typename Elem>
-typename list<Elem>::iterator list<Elem>::insert(iterator it, const Elem& val)  //non funziona
-// insert v into list after it
+    ~vector() {alloc.deallocate(elem,space);}   //free memory
+
+    vector(const vector&);                      // copy constructor: define copy
+    vector(vector&& a);                         // move constructor
+
+    iterator insert(iterator p, const T& val);  // insert element before p return iterator in p
+    iterator erase(iterator p);                 // erase p element return next iterator
+
+    iterator  begin(){return &elem[0];}        // return first element
+    iterator end(){return &elem[sz];}     // return one after last element
+
+    vector& operator=(const vector&);           // copy assignment
+    vector& operator=(vector&&);                // move assignment
+
+    T& at(int n);             // checked access
+    const T& at(int n) const; // checked access
+
+    T& operator[](size_type n) { return elem[n]; }            // for non-const vectors
+    const T& operator[](size_type n) const {return elem[n];}  // for const vectors
+
+    size_type size()const{return sz;}                 //the current size
+    size_type capacity() const { return space; }      //the current space
+    T* const back()const {return  &elem[sz-1];}       //the last element
+
+    void resize(size_type newsize, T val=T());        //increase size and initialize elemnts to zero
+    void push_back(const T& val);                     //add element to vector
+    void reserve(size_type newalloc);                 //add space for new elements
+
+private:
+    A alloc;            // use allocate to handle memory for elements
+    size_type sz;       //size
+    T* elem;            //posize_typeer to the elements
+    size_type space;    // number of elements plus “free space”/“slots”
+                        // for new elements (“the current allocation”)
+};
+
+// copy constructor
+template<typename T, typename A>
+vector<T,A>::vector(const vector& arg)
+// allocate elements, then initialize them by copying
+   :sz{arg.sz},elem{alloc.allocate(arg.sz)},space{arg.sz}
 {
-    if(it.curr == nullptr) { push_back(val); return end();}    // insert at end
-
-    Link<Elem> *nl = new Link<Elem>(val, it.curr->prev, it.curr);   // create newlink(value,prev,succ)
-
-    if(nl->prev) nl->prev->succ = nl;    // newlink become the successor of previous link
-    if(nl->succ) nl->succ->prev = nl;    // newlink become the previous of current link
-
-    return iterator(nl);                 // return the iterator at the newly inserted element
+    for (int i=0; i< arg.sz; ++i)            // copy elements
+    alloc.construct(&elem[i], arg.elem[i]);  // copy
 }
 
-template<typename Elem>
-typename list<Elem>::iterator list<Elem>::erase(iterator it)
-// remove it from the list
+// move constructor
+template<typename T, typename A>
+vector<T,A>::vector(vector&& a)
+    :sz{a.sz}, elem{a.elem}, space{a.space}     // copy a’s elem space and sz
 {
-    if(it.curr == nullptr) return iterator(it);     // nothing to do
-    iterator ret = iterator(it.prev);               // move iterator to next link
-
-    if(it.curr->prev) it.curr->prev->succ =  it.curr->succ;         // the successor become the successor of previous link
-    if(it.curr->succ) it.curr->succ->prev =  it.curr->prev;         // the previous become the previous of the successor link
-    delete it.curr;  // free
-
-    return ret;     // return iterator at the next link
+    a.space = a.sz = 0;
+    a.elem = nullptr;                   // make a the empty vector
+    //alloc.destroy(a.elem); //alloc.destroy do not set a.elem to nullptr
 }
 
-template<typename Elem>
-void list<Elem>::push_front(const Elem& v)
+// copy assignment
+template<typename T, typename A>
+vector<T,A>& vector<T,A>::operator=(const vector& a)
+// make this vector a copy of a
 {
-    node = new Link<Elem>{v, nullptr, node};
-    if (node->succ != nullptr) node->succ->prev = node;
+    if (this==&a) return *this; // self-assignment, no work needed
+
+    if (a.sz<=space) {     // enough space, no need for new allocation
+        for (size_type i = 0; i<a.sz; ++i) alloc.construct(&elem[i], a.elem[i]);   // copy elements
+        sz = a.sz;
+        return *this;
+    }
+    // no enough space, need new allocation
+    T* p = alloc.allocate(a.sz);            // allocate new space
+    for (size_type i=0; i<a.sz; ++i) alloc.construct(&p[i], a.elem[i]);  // copy
+    alloc.deallocate(elem,space);                                // deallocate old space
+    elem = p;                           //set new elements
+    space = sz = a.sz;                  //set new size and space
+    return *this;
+
 }
 
-template<typename Elem>
-void list<Elem>::push_back(const Elem& v)
+//move assignement
+template<typename T, typename A>
+vector<T,A>& vector<T,A>::operator=(vector && a)
 {
-    if(!node) {push_front(v); return;} // first link
-
-    auto it = begin();
-    while(it.curr->succ != nullptr) ++it;
-    it.curr->succ = new Link<Elem>{v, it.curr};
+    alloc.deallocate(elem,space);     // deallocate old space
+    elem = a.elem;          // copy a’s elem space and sz
+    space = a.space;
+    sz = a.sz;
+    a.elem = nullptr;       // make a the empty vector
+    //alloc.destroy(a.elem); // alloc.destroy do not set a.elem to nullptr
+    a.space = a.sz = 0;
+    return *this;           // return a self-reference
 }
 
-template<typename Iterator>  // requires Input_iterator<Iter>() (ยง19.3.3)
-void out(Iterator first, Iterator last)
-// print all the list value
+// erase p: return p+1
+template<typename T, typename A>
+// requires Element<T>() &&  Allocator<A>()
+typename vector<T,A>::iterator vector<T,A>::erase(iterator p)
+{
+    if(p == end()) return p;
+    for (auto pos = p+1;pos != end() ;++pos)
+        *(pos-1) = *pos;            // copy element “one position to the left”
+    alloc.destroy(&*(end()-1));     // destroy surplus copy of last element
+    --sz;
+    return p;
+}
+
+// insert val before p: return p
+template<typename T, typename A>
+typename vector<T,A>::iterator vector<T,A>::insert(vector::iterator p, const T &val)
+{
+    long long index = p-begin();
+    if (size()==capacity())
+        reserve(size()==0?8:2*size());   // make sure we have space
+    // first copy last element into uninitialized space:
+    alloc.construct(elem+sz,*back());
+    ++sz;
+    iterator pp = begin()+index;      // the place to put val
+    for (auto pos = end()-1; pos!=pp; --pos)
+        *pos = *(pos-1);                // copy elements one position to the right
+    *(begin()+index) = val;             // “insert” val
+    return pp;
+
+}
+
+
+//add space for new elements
+template<typename T, typename A>
+void vector<T,A>::reserve(size_type newalloc)
+{
+    if (newalloc<=space) return;                // never decrease allocation
+    T* p = alloc.allocate(newalloc);            // allocate new space
+    for (size_type i=0; i<sz; ++i) alloc.construct(&p[i], elem[i]);  // copy
+    for (size_type i=0; i<sz; ++i) alloc.destroy(&elem[i]);          // destroy
+    alloc.deallocate(elem,space);                              // deallocate old space
+    elem = p;
+    space = newalloc;
+}
+
+//increase size and initialize elemnts to zero
+template<typename T, typename A>
+void vector<T,A>::resize(size_type newsize, T val)
+// make the vector have newsize elements
+// initialize each new element with the default value 0.0
+{
+    reserve(newsize);
+    for (size_type i=sz; i<newsize; ++i) alloc.construct(&elem[i],val);  //construct
+    for (size_type i=sz; i<newsize; ++i) alloc.destroy(&elem[i]);        //destroy
+    sz = newsize;
+}
+
+//add element to vector
+template<typename T, typename A>
+void vector<T,A>::push_back(const T& val)
+// increase vector size by one; initialize the new element with d
+{
+    if (space==0) reserve(8);               // start with space for 8 elements
+    else if (sz==space) reserve(2*space);   // get more space
+    alloc.construct(&elem[sz],val);         // add d at end
+    ++sz;                                   // increase the size
+}
+
+template<typename T, typename A >
+T& vector<T,A>::at(int n)
+{
+    if (n<0 || sz<=n) throw std::out_of_range("at");
+    return elem[n];
+}
+
+template<typename Iterator>  // requires Input_iterator<Iter>() (§19.3.3)
+void out (Iterator first, Iterator last)          // return an iterator to the element in [first,last) that has the highest value
 {
     for (Iterator p = first; p!=last; ++p)
         std::cout << *p << " ";
     std::cout << "\n";
 }
 
-template<typename Iter>  // requires Input_iterator<Iter>() (§19.3.3)
-Iter high(Iter first, Iter last)
-// return an iterator to the element in [first,last) that has the highest value
+template<typename C>
+void debug (C& c)
 {
-    Iter high = first;
-    for (Iter p = first; p!=last; ++p)
-        if (*high<*p) high = p;
-    return high;
+    using size_type = unsigned long;
+    std::cout << c.size()      <<" size\n";
+    std::cout << c.capacity()  <<" capacity\n";
+     for (size_type i = 0 ; i < c.size(); ++i)
+        std::cout << c[i] << " ";
+    std::cout << "\n";
+}
+
+struct Nomi
+{
+    Nomi(std::string n = "")
+        : nome{n}{
+        std::cout << "constructor of: " << nome <<std::endl; }
+    std::string nome;
+    int i;
+    ~Nomi(){
+        std::cout << "destructor of: " << nome <<std::endl; }
+};
+
+std::ostream& operator<<(std::ostream& out, const Nomi& n)
+{
+    out << n.nome;
+    return out;
 }
 
 int main()
@@ -147,25 +273,33 @@ int main()
     setlocale(LC_ALL, "en_US.UTF-8");
 
 try {
+        vector<Nomi> v{};
+         v.push_back(Nomi{"pluto"});
+        v.push_back(Nomi{"minnie"});
+        v.push_back(Nomi{"paperino"});
+        out(v.begin(), v.end());
+/*
+      auto i = v.begin();
+         ++i; ++i;
+        // test copy insert
+        v.insert(i, Nomi{"topolino"});
 
-    list<int> lst;
+        out(v.begin(), v.end());
 
-    lst.push_back(1);
-    lst.push_back(2);
-    lst.push_back(3);
-    lst.push_back(4);
-    lst.insert(lst.end(), 5);
+        // test copy erase
+        v.erase(--i);
 
-    list<int>::iterator i = lst.begin();
+        // test copy constructor
+        vector<Nomi> v2{v};
 
-    ++i;
+       out(v2.begin(), v2.end());
 
-    lst.insert(i, 10);
-    out(lst.begin() ,lst.end());
+*/
+        int** pn = new int*;
 
-    auto h = high(lst.begin() ,lst.end());
-    std::cout << "High : "<< *h << std::endl;
+       std::cout << "capacity: " << v.capacity() << "\n";
 
+       Nomi* ppn[2];// =  Nomi*[2];
 
     }
 
