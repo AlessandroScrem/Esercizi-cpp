@@ -180,30 +180,6 @@ try {
 
 
 
-/*
-        Nomi** vn = new Nomi*[10];
-        vn[0] = pl;
-        vn[1] = pa;
-        vn[2] = mi;
-        delete vn[0];
-        delete vn[1];
-        delete vn[2];
-
-        delete [] vn;
-
-       std::cout << "new nome [1]: " << vn[1]->nome << std::endl;
-*/
- //        std::cout << "new nome [2]: " << vn[2]->nome << std::endl;
-
-
-//        std::cout << "new nome ptr: " << pn << std::endl;
-
-
-
-
-
-
-
     }
 
     catch ( std::exception& e) {
