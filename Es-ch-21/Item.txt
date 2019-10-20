@@ -1,0 +1,10 @@
+Baseball 10 20.48
+Football 12 13.35
+Volleyball 90 9.56
+Tennis 34 95.23
+Basketball 67 35.37
+Athletics 95 24.13
+Badminton 5 45.49
+Boxing 85 30.48
+Canoe 29 48.43
+Hokey 28 39.49 

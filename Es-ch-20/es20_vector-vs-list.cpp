@@ -24,14 +24,13 @@ Chapter 20:
 #include <chrono>
 #include <iomanip>
 
-using std::chrono::system_clock;
 
 template<typename Cont>
 long long populate(Cont& t, int n){
 // insert n random int in Cont& t keeping the Cont in ascending order
 // out the time spent to pupuate the Container
 
-    auto t1 = system_clock::now();                   // begin time
+    auto t1 = std::chrono::system_clock::now();                   // begin time
 
     auto i = n;
     while(i--) {
@@ -42,7 +41,7 @@ long long populate(Cont& t, int n){
        t.insert(it,size);
     }
 
-    auto t2 = system_clock::now();                    // end time
+    auto t2 = std::chrono::system_clock::now();                    // end time
     return std::chrono::duration_cast<std::chrono::milliseconds>(t2-t1).count();
 
 }
