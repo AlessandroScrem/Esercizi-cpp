@@ -1,0 +1,10 @@
+{Pablo Barcelona 102(TV50 700 4)(HomeTH 300 1)}
+{Gunter Berlin 87(Phone 973 1)}
+{Nolan Denver 973(Lamp 34 4)(TV 34 56)}
+{Guido Milan 87(TV50 700 1)}
+{Antoniette Nice 74(Lamp 35 4)}
+{Gabriel Ontario 22(laptop 1500 2)}
+{Marco Palermo 13(TV46 23 1)}
+{Albert Paris 345(TV34 454 67)(Radio 345 6)}
+{Gabrielle Paris 56(Phone 98 4)(TV60 354 1)}
+{Rubio Velencia 47(Phone 700 4)(HomeVideo 23 56)}

@@ -1,0 +1,10 @@
+{Albert Paris 345(TV34 454 67)(Radio 787 67)}
+{Alessandro Turin 12(TV50 500 2)}
+{Barbara Verona 74(Lamp 56 8)}
+{Francine Lyon 46(Phone 98 4)(TV60 354 1)}
+{Nolan Denver 973(Lamp 34 4)(TV 34 56)}
+{Pablo Barcelona 102(TV50 700 4)(HomeTH 300 1)}
+{Robert Berlin 21(Phone 973 1)}
+{Roberto Rome 23(TV46 23 1)}
+{Rubio Velencia 47(Phone 900 4)(HomeVideo 23 56)}
+{Thomas California 22(laptop 1500 2)}

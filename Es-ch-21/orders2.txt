@@ -1,0 +1,10 @@
+{client Gabriel Ontario 22 (laptop 1500 2)}
+{client Pablo Barcelona 102 (TV50 700 4)(HomeTH 300 1)}
+{client Rubio Velencia 47 (Phone 700 4)(HomeVideo 23 56)}
+{client Nolan Denver 973 (Lamp 34 4)(TV 34 56)}
+{client Albert Paris 345 (TV34 454 67)(Radio 345 6)}
+{client Gabrielle  Paris 56 (Phone 98 4)(TV60 354 1)}
+{client Marco Palermo 13 (TV46 23 1)}
+{client Gunter Berlin 87 (Phone 973 1)}
+{client Guido Milan 87(TV50 700 1)}
+{client Antoniette Nice 74 (Lamp 35 4)}
