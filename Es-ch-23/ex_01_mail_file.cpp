@@ -1,8 +1,13 @@
 /******************************************************************************
 Ch 23:
- 2. Add a multimap and have it hold subjects.
-    Let the program take an input string from the keyboard
-    and print out every message with that string as its subject.
+ 1. Get the email file example to run; test it using a larger file of your own creation.
+    Be sure to include messages that are likely to trigger errors,
+    such as messages with two address lines,
+    several messages with the same address and/or same subject,
+    and empty messages.
+    Also test the program with something that simply isn’t a message
+    according to that program’s specification,
+    such as a large file containing no –––– lines.
 *******************************************************************************/
 
 #include <iostream>
@@ -30,12 +35,6 @@ public:
     Line_iter end() const { return last;}
     // . . .
 };
-
-ostream& operator<<(ostream& out, const Message& m){
-    for (auto p: m)
-        out << p << "\n";
-    return out;
-}
 
 using Mess_iter = vector<Message>::const_iterator;
 
@@ -105,12 +104,6 @@ string find_subject(const Message* m)
     return "";
 }
 
-template <typename Pair>
-void print_msg( const Pair m){
-    for( auto p = m.first; p!= m.second; ++p)
-        cout << "---\n"
-             << *p->second << endl;
-}
 
 int main()
 {
@@ -118,10 +111,10 @@ int main()
 
 try {
 
-
         Mail_file mfile {"my–mail–file-ex01.txt"};  // initialize mfile from a file
 
         // first gather messages from each sender together in a multimap:
+
         multimap<string, const Message*> sender;
 
         for (const auto& m : mfile) {
@@ -130,21 +123,14 @@ try {
                 sender.insert(make_pair(s,&m));
         }
 
-        // gather messages from each subject together in a multimap:
-        multimap<string, const Message*> subjects;
-
-        for (const auto& m : mfile) {
-            string s = find_subject(&m);
-            if (s!="") subjects.insert(make_pair(s,&m));
-        }
-
-        cout << "Enter Subject: ";
-        string query_subject;
-
-        getline(cin, query_subject);
-        auto sub = subjects.equal_range(query_subject);
-        print_msg(sub);
-
+        // now iterate through the multimap
+        // and extract the subjects of John Doe’s messages:
+        auto pp = sender.equal_range("John Doe <jdoe@machine.example>");
+        for(auto p = pp.first; p!=pp.second; ++p)
+            cout << find_subject(p->second) << '\n';
+            /*for (const auto& x : *p->second)
+                cout << x << "\n";
+            */
     }
 
     catch ( std::exception& e) {
