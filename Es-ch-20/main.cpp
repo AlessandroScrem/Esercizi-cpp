@@ -1,161 +1,72 @@
 /******************************************************************************
-Ch 23:
- 2. Add a multimap and have it hold subjects.
-    Let the program take an input string from the keyboard
-    and print out every message with that string as its subject.
+
+Implement a writing style helper tool for finding very long sentences in text with std::multimap
+
+We will read all user input from standard input,
+we tokenize by whole sentences, and not words.
+Then we will collect all sentences in an std::multimap paired
+with a variable carrying their length.
+Afterward, we output all sentences, sorted by their length, back to the user.
+
 *******************************************************************************/
 
 #include <iostream>
-#include <fstream>
-#include<string>
-#include<vector>
-#include<map>
+#include <iterator>
+#include <map>
+#include <string>
+#include <sstream>
+#include <algorithm>
 
 using namespace std;
 
-// error() simply disguises throws:
-[[noreturn]] inline  void error(const string& s)
-{
-    throw runtime_error(s);
+// helper function for filter  spaces, new line, tabs
+string filter_ws(const string &s) {
+    const char *ws {" \r\n\t"};
+    const auto a (s.find_first_not_of(ws));
+    const auto b (s.find_last_not_of(ws));
+    if (a == string::npos) {
+        return {};          }
+    return s.substr(a, b+1);
 }
 
-typedef vector<string>::const_iterator Line_iter;
-
-class Message {   // a Message points to the first and the last lines of a message
-    Line_iter first;
-    Line_iter last;
-public:
-    Message(Line_iter p1, Line_iter p2) :first{p1}, last{p2} { }
-    Line_iter begin() const { return first;}
-    Line_iter end() const { return last;}
-    // . . .
-};
-
-ostream& operator<<(ostream& out, const Message& m){
-    for (auto p: m)
-        out << p << "\n";
-    return out;
-}
-
-using Mess_iter = vector<Message>::const_iterator;
-
-struct Mail_file {      // a Mail_file holds all the lines from a file
-                            // and simplifies access to messages
-    string name;            // file name
-    vector<string> lines;   // the lines in order
-    vector<Message> m;      // Messages in order
-
-    Mail_file(const string& n);     // read file n into lines
-
-    Mess_iter begin() const { return m.begin(); }
-    Mess_iter end() const { return m.end(); }
-};
-
-Mail_file::Mail_file(const string& n)
-// open file named n
-// read the lines from n into lines
-// find the messages in the lines and compose them in m
-// for simplicity assume every message is ended by a –––– line
-{
-    ifstream in {n};                 // open the file
-    if (!in) {
-       cerr << "no " << n << '\n';
-       exit(1);                    // terminate the program
+// function sentence length counting
+// take a giant string containing all the text,
+// return  std::multimap,
+// which maps sorted sentence lengths to the sentences
+multimap<size_t, string> get_sentence_stats(const string &content) {
+// we use two iterators in order to point to consecutive dots within the text.
+// Everything between is a text sentence.
+    multimap<size_t, string> ret;
+    const auto end_it (end(content));
+    auto it1 (begin(content));
+    auto it2 (find(it1, end_it, '.'));
+    // The it2 will be always one dot further than it1.
+    // As long as it1 did not reach the end of the text, we are fine.
+    // The second condition checks whetherÂ it2 is really at least some characters further.
+    // If that was not the case, there would be no characters left to read between them.
+    while (it1 != end_it && distance(it1, it2) > 0) {
+         string s {filter_ws({it1, it2})}; // the pure sentence
+         if (s.length() > 0) {
+             const auto words (count(begin(s), end(s), ' ') + 1);  // count  how many words there are
+             ret.emplace(make_pair(words, move(s)));  // save word and sentence in the multimap
+         }
+         it1 = next(it2, 1);    // iterator it1 on the next sentence's dot character
+         it2 = find(it1, end_it, '.');
     }
-
-    for (string s; getline(in,s); )  // build the vector of lines
-          lines.push_back(s);
-
-    auto first = lines.begin();      // build the vector of Messages
-        for (auto p = lines.begin(); p!=lines.end(); ++p) {
-            if (*p == "––––") {               // end of message
-                m.push_back(Message(first,p));
-                first = p+1;                 // –––– not part of message
-             }
-        }
-}
-
-int is_prefix(const string& s, const string& p)
-// is p the first part of s?
-{
-    int n = p.size();
-    if (string(s,0,n)==p) return n;
-    return 0;
-}
-
-bool find_from_addr(const Message* m, string& s)
-// find the name of the sender in a Message;
-// return true if found
-// if found, place the sender’s name in s:
-{
-    for (const auto& x : *m)
-        if (int n = is_prefix(x, "From: ")) {
-            s = string(x,n);
-            return true;
-        }
-    return false;
-}
-
-string find_subject(const Message* m)
-// return the subject of the Message, if any, otherwise "":
-{
-    for (const auto& x : *m)
-        if (int n = is_prefix(x, "Subject: "))
-            return string(x,n);
-    return "";
-}
-
-template <typename Pair>
-void print_msg( const Pair m){
-    for( auto p = m.first; p!= m.second; ++p)
-        cout << "---\n"
-             << *p->second << endl;
+    return ret;
 }
 
 int main()
 {
-    setlocale(LC_ALL, "en_US.UTF-8");
+     //cin.unsetf(ios::skipws);
+     //string content {istream_iterator<char>{cin}, {}};
+    //string content  {"alfa beta gamma, delta. alfa beta. uno due tre.uno due tre"};
+    string content  {"uno due. tre"};
 
-try {
+     for ( const auto & [word_count, sentence] : get_sentence_stats(content)) {
+         cout << word_count << " words: " << sentence << ".\n";
+      }
 
-
-        Mail_file mfile {"my–mail–file-ex01.txt"};  // initialize mfile from a file
-
-        // first gather messages from each sender together in a multimap:
-        multimap<string, const Message*> sender;
-
-        for (const auto& m : mfile) {
-            string s;
-            if (find_from_addr(&m,s))
-                sender.insert(make_pair(s,&m));
-        }
-
-        // gather messages from each subject together in a multimap:
-        multimap<string, const Message*> subjects;
-
-        for (const auto& m : mfile) {
-            string s = find_subject(&m);
-            if (s!="") subjects.insert(make_pair(s,&m));
-        }
-
-        cout << "Enter Subject: ";
-        string query_subject;
-
-        getline(cin, query_subject);
-        auto sub = subjects.equal_range(query_subject);
-        print_msg(sub);
-
-    }
-
-    catch ( std::exception& e) {
-         std::cerr << "exception: " << e.what() <<  std::endl;
-    }
-    catch (...) {
-         std::cerr << "exception\n";
-    }
-
-
+    return 0;
 }
-
-
 
